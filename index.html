@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>יומן המסע שלי</title>
+    <link rel="manifest" href="./manifest.json">
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f7f4;
+            color: #263b35;
+        }
+
+        header {
+            background: #285943;
+            color: white;
+            padding: 45px 20px;
+            text-align: center;
+            border-radius: 0 0 30px 30px;
+        }
+
+        header h1 {
+            font-size: 32px;
+            margin: 0 0 12px;
+        }
+
+        header p {
+            font-size: 16px;
+            margin: 0;
+            opacity: 0.9;
+        }
+
+        main {
+            max-width: 600px;
+            margin: 35px auto;
+            padding: 0 20px;
+        }
+
+        .welcome-card {
+            background: white;
+            padding: 30px 25px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .welcome-card h2 {
+            margin-top: 0;
+            font-size: 23px;
+        }
+
+        .welcome-card p {
+            color: #65736c;
+            line-height: 1.7;
+        }
+
+        button {
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .add-button {
+            display: block;
+            width: 100%;
+            margin-top: 25px;
+            padding: 16px;
+            background: #285943;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .add-button:hover {
+            background: #1e4634;
+        }
+
+        .days-section {
+            margin-top: 35px;
+        }
+
+        .days-section h2 {
+            font-size: 21px;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #87938c;
+            padding: 30px 10px;
+        }
+
+        /* עיצוב הטופס לכתיבת יום חדש */
+
+        .editor {
+            display: none;
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            margin-top: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .editor h2 {
+            margin-top: 0;
+        }
+
+        label {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #d5dfd8;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 16px;
+            color: #263b35;
+            background: #fff;
+        }
+
+        textarea {
+            min-height: 180px;
+            resize: vertical;
+            line-height: 1.7;
+        }
+
+        .cancel-button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 13px;
+            border: none;
+            background: #edf0ed;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        /* עיצוב רשומות היומן */
+
+        .day-card {
+            background: white;
+            padding: 22px;
+            border-radius: 16px;
+            margin-top: 15px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .day-card h3 {
+            margin: 10px 0;
+        }
+
+        .day-card p {
+            line-height: 1.7;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .day-date {
+            color: #738379;
+            font-size: 14px;
+        }
+
+        .edit-button {
+            background: #e4eee7;
+            color: #285943;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .status-message {
+            color: #285943;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <header>
+
+        <h1>🌍 יומן המסע שלי</h1>
+
+        <p>כל יום הוא סיפור חדש</p>
+
+    </header>
+
+
+    <main>
+
+        <!-- כרטיס הפתיחה -->
+
+        <section class="welcome-card">
+
+            <h2>ההרפתקה מתחילה כאן ✨</h2>
+
+            <p>
+                כאן נשמור את הרגעים, המקומות והסיפורים
+                שיהפכו את הטיול שלך לזיכרון בלתי נשכח.
+            </p>
+
+            <button class="add-button" id="addDayButton">
+                + הוסף יום חדש
+            </button>
+
+        </section>
+
+
+        <!-- טופס כתיבת היומן -->
+
+        <section class="editor" id="editor">
+
+            <h2 id="editorTitle">יום חדש ביומן ✍️</h2>
+
+            <form id="dayForm">
+
+                <label for="dayDate">תאריך</label>
+
+                <input
+                    type="date"
+                    id="dayDate"
+                    required
+                >
+
+
+                <label for="dayTitle">כותרת היום</label>
+
+                <input
+                    type="text"
+                    id="dayTitle"
+                    placeholder="למשל: היום הראשון בתאילנד"
+                    maxlength="100"
+                    required
+                >
+
+
+                <label for="dayStory">הסיפור של היום</label>
+
+                <textarea
+                    id="dayStory"
+                    placeholder="מה עשית היום? איפה היית? מה היה הרגע הכי מעניין?"
+                    required
+                ></textarea>
+<label for="dayPhotos">📸 תמונות מהיום</label>
+
+<input
+    type="file"
+    id="dayPhotos"
+    accept="image/*"
+    multiple
+>
+
+<p style="font-size: 13px; color: #738379;">
+    אפשר לבחור כמה תמונות מאותו יום.
+</p>                
+
+                <button type="submit" class="add-button">
+                    💾 שמור את היום
+                </button>
+
+                <button type="button" class="cancel-button" id="cancelButton">
+                    ביטול
+                </button>
+
+            </form>
+
+        </section>
+
+
+        <!-- רשימת הימים ביומן -->
+
+        <section class="days-section">
+
+            <h2>📖 הימים שלי</h2>
+<button
+    type="button"
+    class="add-button"
+    id="backupButton"
+>
+    📦 הורדת גיבוי ליומן
+</button>
+<button
+    type="button"
+    class="add-button"
+    id="restoreButton"
+>
+    📂 שחזור יומן מקובץ גיבוי
+</button>
+
+<input
+    type="file"
+    id="restoreFile"
+    accept=".json,application/json"
+    style="display: none;"
+>
+            <p class="status-message" id="statusMessage"></p>
+
+            <div id="daysContainer"></div>
+
+        </section>
+
+    </main>
+
+
+    <script>
+
+        // --------------------------------------------------
+        // שלב 1: חיבור למסד הנתונים המקומי
+        // --------------------------------------------------
+
+        let db;
+
+        const dbRequest = indexedDB.open("TravelJournalDB", 1);
+
+        dbRequest.onupgradeneeded = function(event) {
+
+            const database = event.target.result;
+
+            if (!database.objectStoreNames.contains("days")) {
+
+                database.createObjectStore("days", {
+                    keyPath: "date"
+                });
+
+            }
+
+        };
+
+
+        dbRequest.onsuccess = function(event) {
+
+            db = event.target.result;
+
+            loadDays();
+
+        };
+
+
+        dbRequest.onerror = function() {
+
+            showStatus("לא ניתן לפתוח את מסד הנתונים. בדוק שהדפדפן מאפשר אחסון מקומי.");
+
+        };
+
+
+        // --------------------------------------------------
+        // שלב 2: פתיחת טופס ליום חדש
+        // --------------------------------------------------
+
+        const editor = document.getElementById("editor");
+
+        const dayForm = document.getElementById("dayForm");
+
+        const dateInput = document.getElementById("dayDate");
+
+        const titleInput = document.getElementById("dayTitle");
+
+        const storyInput = document.getElementById("dayStory");
+
+
+        function getToday() {
+
+            const now = new Date();
+
+            const localDate = new Date(
+                now.getTime() - now.getTimezoneOffset() * 60000
+            );
+
+            return localDate.toISOString().slice(0, 10);
+
+        }
+
+
+        document.getElementById("addDayButton").onclick = function() {
+
+            dayForm.reset();
+
+            dateInput.value = getToday();
+
+            document.getElementById("editorTitle").textContent =
+                "יום חדש ביומן ✍️";
+
+            dateInput.disabled = false;
+
+            editor.style.display = "block";
+
+            editor.scrollIntoView({
+                behavior: "smooth"
+            });
+
+        };
+
+
+        document.getElementById("cancelButton").onclick = function() {
+
+            editor.style.display = "none";
+
+        };
+
+
+        // --------------------------------------------------
+        // שלב 3: שמירת רשומה במסד הנתונים
+        // --------------------------------------------------
+
+        dayForm.onsubmit = function(event) {
+
+            event.preventDefault();
+
+            if (!db) {
+
+                showStatus("מסד הנתונים עדיין לא מוכן. נסה שוב בעוד רגע.");
+
+                return;
+
+            }
+
+            const day = {
+
+                date: dateInput.value,
+
+                title: titleInput.value.trim(),
+
+                story: storyInput.value.trim()
+
+            };
+
+
+            if (!day.date || !day.title || !day.story) {
+
+                showStatus("יש למלא תאריך, כותרת וסיפור לפני השמירה.");
+
+                return;
+
+            }
+
+
+            const transaction = db.transaction(
+                ["days"],
+                "readwrite"
+            );
+
+            const store = transaction.objectStore("days");
+
+// התמונות החדשות שבחרנו
+
+const newPhotos = Array.from(photosInput.files);
+
+// בדיקה אם כבר קיימת רשומה בתאריך הזה
+
+const existingDayRequest = store.get(day.date);
+
+existingDayRequest.onsuccess = function() {
+
+    const existingDay = existingDayRequest.result;
+
+    // אם כבר שמרנו תמונות ביום הזה, נשמור גם אותן
+
+    const existingPhotos = existingDay?.photos || [];
+
+    // הוספת התמונות החדשות לתמונות הקיימות
+
+    day.photos = [...existingPhotos, ...newPhotos];
+
+    // שמירת הרשומה והתמונות במסד הנתונים
+
+    store.put(day);
+
+};
+
+existingDayRequest.onerror = function() {
+
+    showStatus("לא ניתן לטעון את התמונות הקיימות. הרשומה לא נשמרה.");
+
+};
+
+            transaction.oncomplete = function() {
+
+                editor.style.display = "none";
+
+                showStatus("היום נשמר בהצלחה! ✅");
+
+                loadDays();
+
+            };
+
+
+            transaction.onerror = function() {
+
+                showStatus("אירעה שגיאה בשמירה. הרשומה לא נשמרה.");
+
+            };
+
+        };
+
+
+        // --------------------------------------------------
+        // שלב 4: הצגת הימים שנשמרו
+        // --------------------------------------------------
+
+        function loadDays() {
+
+            if (!db) return;
+
+            const transaction = db.transaction(
+                ["days"],
+                "readonly"
+            );
+
+            const store = transaction.objectStore("days");
+
+            const request = store.getAll();
+
+
+            request.onsuccess = function() {
+
+                const days = request.result;
+
+                days.sort(function(a, b) {
+
+                    return b.date.localeCompare(a.date);
+
+                });
+
+                displayDays(days);
+
+            };
+
+
+            request.onerror = function() {
+
+                showStatus("לא ניתן לטעון את הרשומות השמורות.");
+
+            };
+
+        };
+
+
+        function displayDays(days) {
+
+            const container = document.getElementById("daysContainer");
+
+            container.replaceChildren();
+
+
+            if (days.length === 0) {
+
+                const emptyMessage = document.createElement("p");
+
+                emptyMessage.className = "empty-message";
+
+                emptyMessage.textContent =
+                    "עדיין אין רשומות ביומן. הרפתקה חדשה מחכה לך!";
+
+                container.appendChild(emptyMessage);
+
+                return;
+
+            }
+
+
+            days.forEach(function(day) {
+
+                const card = document.createElement("article");
+
+                card.className = "day-card";
+
+
+                const date = document.createElement("div");
+
+                date.className = "day-date";
+
+                date.textContent = new Date(
+                    day.date + "T12:00:00"
+                ).toLocaleDateString("he-IL");
+
+
+                const title = document.createElement("h3");
+
+                title.textContent = day.title;
+
+
+                const story = document.createElement("p");
+
+                story.textContent = day.story;
+
+
+                const editButton = document.createElement("button");
+
+                editButton.className = "edit-button";
+
+                editButton.textContent = "✏️ עריכת היום";
+
+
+                editButton.onclick = function() {
+
+                    editDay(day);
+
+                };
+
+
+                card.appendChild(date);
+
+                card.appendChild(title);
+
+                card.appendChild(story);
+// הצגת התמונות שנשמרו ברשומה
+
+if (day.photos && day.photos.length > 0) {
+
+    const photosGallery = document.createElement("div");
+
+    photosGallery.style.display = "flex";
+    photosGallery.style.flexWrap = "wrap";
+    photosGallery.style.gap = "10px";
+    photosGallery.style.marginTop = "15px";
+
+    day.photos.forEach(function(photo) {
+
+        const image = document.createElement("img");
+
+        const imageUrl = URL.createObjectURL(photo);
+
+        image.src = imageUrl;
+
+        image.style.width = "110px";
+        image.style.height = "110px";
+        image.style.objectFit = "cover";
+        image.style.borderRadius = "10px";
+
+        image.onload = function() {
+            URL.revokeObjectURL(imageUrl);
+        };
+
+        photosGallery.appendChild(image);
+
+    });
+
+    card.appendChild(photosGallery);
+
+}
+                card.appendChild(editButton);
+
+                container.appendChild(card);
+
+            });
+
+        };
+
+
+        // --------------------------------------------------
+        // שלב 5: עריכת יום שכבר נשמר
+        // --------------------------------------------------
+
+        function editDay(day) {
+
+            document.getElementById("editorTitle").textContent =
+                "עריכת היום ✍️";
+
+            dateInput.value = day.date;
+
+            titleInput.value = day.title;
+
+            storyInput.value = day.story;
+
+            // התאריך הוא המזהה של הרשומה.
+            // בעריכה ננעל אותו כדי למנוע יצירת רשומה כפולה.
+
+            dateInput.disabled = true;
+
+            editor.style.display = "block";
+
+            editor.scrollIntoView({
+                behavior: "smooth"
+            });
+
+        };
+
+
+        // --------------------------------------------------
+        // הצגת הודעות למשתמש
+        // --------------------------------------------------
+
+        function showStatus(message) {
+
+            document.getElementById("statusMessage").textContent = message;
+
+        };
+// הצגת תמונות שנבחרו
+
+const photosInput = document.getElementById("dayPhotos");
+
+const photosPreview = document.createElement("div");
+
+photosPreview.style.display = "flex";
+photosPreview.style.flexWrap = "wrap";
+photosPreview.style.gap = "10px";
+photosPreview.style.marginTop = "15px";
+
+photosInput.after(photosPreview);
+
+let previewUrls = [];
+
+photosInput.addEventListener("change", function() {
+
+    // ניקוי התמונות הקודמות מהתצוגה
+
+    photosPreview.replaceChildren();
+
+    previewUrls.forEach(function(url) {
+        URL.revokeObjectURL(url);
+    });
+
+    previewUrls = [];
+
+    // הצגת התמונות החדשות
+
+    Array.from(photosInput.files).forEach(function(file) {
+
+        const image = document.createElement("img");
+
+        const imageUrl = URL.createObjectURL(file);
+
+        previewUrls.push(imageUrl);
+
+        image.src = imageUrl;
+
+        image.style.width = "100px";
+        image.style.height = "100px";
+        image.style.objectFit = "cover";
+        image.style.borderRadius = "10px";
+
+        photosPreview.appendChild(image);
+
+    });
+
+});
+// --------------------------------------------------
+// יצירת קובץ גיבוי הכולל את הרשומות והתמונות
+// --------------------------------------------------
+
+// המרת תמונה למידע שאפשר לשמור בתוך קובץ JSON
+
+function photoToDataURL(photo) {
+
+    return new Promise(function(resolve, reject) {
+
+        const reader = new FileReader();
+
+        reader.onload = function() {
+            resolve(reader.result);
+        };
+
+        reader.onerror = function() {
+            reject(new Error("לא ניתן לקרוא את אחת התמונות."));
+        };
+
+        reader.readAsDataURL(photo);
+
+    });
+
+}
+
+
+// קריאת כל הרשומות ממסד הנתונים
+
+function getAllDaysForBackup() {
+
+    return new Promise(function(resolve, reject) {
+
+        if (!db) {
+
+            reject(new Error("מסד הנתונים אינו זמין."));
+            return;
+
+        }
+
+        const transaction = db.transaction(
+            ["days"],
+            "readonly"
+        );
+
+        const store = transaction.objectStore("days");
+
+        const request = store.getAll();
+
+        request.onsuccess = function() {
+            resolve(request.result);
+        };
+
+        request.onerror = function() {
+            reject(new Error("לא ניתן לקרוא את הרשומות."));
+        };
+
+    });
+
+}
+
+
+// יצירת קובץ הגיבוי והורדתו למכשיר
+
+document.getElementById("backupButton").onclick = async function() {
+
+    const button = document.getElementById("backupButton");
+
+    button.disabled = true;
+
+    button.textContent = "⏳ מכין את קובץ הגיבוי...";
+
+    try {
+
+        // שליפת כל הימים השמורים
+
+        const days = await getAllDaysForBackup();
+
+        if (days.length === 0) {
+
+            alert("היומן עדיין ריק. אין רשומות לגיבוי.");
+
+            return;
+
+        }
+
+
+        // הכנת הרשומות והתמונות לקובץ הגיבוי
+
+        const backupDays = [];
+
+        for (const day of days) {
+
+            const backupPhotos = [];
+
+            for (const photo of (day.photos || [])) {
+
+                const photoData = await photoToDataURL(photo);
+
+                backupPhotos.push({
+
+                    name: photo.name || "photo",
+
+                    type: photo.type || "image/jpeg",
+
+                    lastModified: photo.lastModified || null,
+
+                    data: photoData
+
+                });
+
+            }
+
+            backupDays.push({
+
+                date: day.date,
+
+                title: day.title,
+
+                story: day.story,
+
+                photos: backupPhotos
+
+            });
+
+        }
+
+
+        // יצירת מבנה קובץ הגיבוי
+
+        const backup = {
+
+            app: "TravelJournal",
+
+            version: 1,
+
+            createdAt: new Date().toISOString(),
+
+            days: backupDays
+
+        };
+
+
+        // המרת המידע לקובץ JSON
+
+        const json = JSON.stringify(backup);
+
+        const backupFile = new Blob(
+            [json],
+            { type: "application/json" }
+        );
+
+
+        // יצירת קישור זמני להורדת הקובץ
+
+        const downloadUrl = URL.createObjectURL(backupFile);
+
+        const downloadLink = document.createElement("a");
+
+        const today = new Date().toISOString().slice(0, 10);
+
+        downloadLink.href = downloadUrl;
+
+        downloadLink.download =
+            "travel-journal-backup-" + today + ".json";
+
+        document.body.appendChild(downloadLink);
+
+        downloadLink.click();
+
+        downloadLink.remove();
+
+
+        // שחרור הקישור הזמני לאחר ההורדה
+
+        setTimeout(function() {
+
+            URL.revokeObjectURL(downloadUrl);
+
+        }, 60000);
+
+
+        showStatus(
+            "קובץ הגיבוי הוכן. בדוק שהוא ירד למכשיר. 📦"
+        );
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        alert(
+            "אירעה שגיאה ביצירת הגיבוי. " +
+            "נסה שוב וודא שקיים מספיק מקום פנוי במכשיר."
+        );
+
+    }
+
+    finally {
+
+        button.disabled = false;
+
+        button.textContent = "📦 הורדת גיבוי ליומן";
+
+    }
+
+};
+// --------------------------------------------------
+// שחזור היומן מקובץ גיבוי
+// --------------------------------------------------
+
+const restoreButton = document.getElementById("restoreButton");
+
+const restoreFileInput = document.getElementById("restoreFile");
+
+
+// פתיחת חלון בחירת קובץ הגיבוי
+
+restoreButton.onclick = function() {
+
+    restoreFileInput.value = "";
+
+    restoreFileInput.click();
+
+};
+
+
+// בדיקת תקינות התאריך
+
+function isValidBackupDate(date) {
+
+    if (typeof date !== "string") {
+        return false;
+    }
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return false;
+    }
+
+    const parsedDate = new Date(date + "T12:00:00Z");
+
+    return !isNaN(parsedDate.getTime()) &&
+        parsedDate.toISOString().slice(0, 10) === date;
+
+}
+
+
+// המרת תמונה מקובץ הגיבוי בחזרה לקובץ תמונה
+
+async function restorePhoto(photo) {
+
+    if (
+        !photo ||
+        typeof photo.data !== "string" ||
+        !/^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(photo.data)
+    ) {
+
+        throw new Error("אחת התמונות בקובץ הגיבוי אינה תקינה.");
+
+    }
+
+    const response = await fetch(photo.data);
+
+    if (!response.ok) {
+
+        throw new Error("לא ניתן לשחזר אחת מהתמונות.");
+
+    }
+
+    const blob = await response.blob();
+
+    if (!blob.type.startsWith("image/")) {
+
+        throw new Error("סוג קובץ התמונה אינו תקין.");
+
+    }
+
+    return new File(
+
+        [blob],
+
+        typeof photo.name === "string" ? photo.name : "photo",
+
+        {
+            type: blob.type,
+
+            lastModified:
+                Number.isFinite(photo.lastModified)
+                    ? photo.lastModified
+                    : Date.now()
+        }
+
+    );
+
+}
+
+
+// קריאת קובץ הגיבוי
+
+restoreFileInput.onchange = async function() {
+
+    const file = restoreFileInput.files[0];
+
+    if (!file) return;
+
+    if (!db) {
+
+        alert("מסד הנתונים עדיין לא מוכן.");
+
+        return;
+
+    }
+
+    restoreButton.disabled = true;
+
+    restoreButton.textContent = "⏳ מכין את השחזור...";
+
+    try {
+
+        // קריאת הקובץ והמרתו למידע
+
+        const fileContent = await file.text();
+
+        const backup = JSON.parse(fileContent);
+
+
+        // בדיקה שמדובר בקובץ גיבוי מתאים
+
+        if (
+            !backup ||
+            backup.app !== "TravelJournal" ||
+            backup.version !== 1 ||
+            !Array.isArray(backup.days)
+        ) {
+
+            throw new Error("קובץ הגיבוי אינו מתאים לאפליקציה.");
+
+        }
+
+
+        // הכנת הרשומות והתמונות לשחזור
+
+        const restoredDays = [];
+
+        const datesInBackup = new Set();
+
+        for (const day of backup.days) {
+
+            if (
+                !day ||
+                !isValidBackupDate(day.date) ||
+                typeof day.title !== "string" ||
+                typeof day.story !== "string" ||
+                !Array.isArray(day.photos) ||
+                datesInBackup.has(day.date)
+            ) {
+
+                throw new Error(
+                    "אחת הרשומות בקובץ הגיבוי אינה תקינה."
+                );
+
+            }
+
+            datesInBackup.add(day.date);
+
+            const restoredPhotos = [];
+
+            for (const photo of day.photos) {
+
+                const imageFile = await restorePhoto(photo);
+
+                restoredPhotos.push(imageFile);
+
+            }
+
+            restoredDays.push({
+
+                date: day.date,
+
+                title: day.title,
+
+                story: day.story,
+
+                photos: restoredPhotos
+
+            });
+
+        }
+
+
+        // בקשת אישור לפני ביצוע השחזור
+
+        const approved = confirm(
+
+            "נמצאו " + restoredDays.length + " רשומות בגיבוי.\n\n" +
+
+            "רשומות מתאריכים שכבר קיימים ביומן לא יוחלפו.\n\n" +
+
+            "האם להמשיך בשחזור?"
+
+        );
+
+        if (!approved) return;
+
+
+        // שמירת הרשומות במסד הנתונים
+
+        await new Promise(function(resolve, reject) {
+
+            const transaction = db.transaction(
+                ["days"],
+                "readwrite"
+            );
+
+            const store = transaction.objectStore("days");
+
+            let restoredCount = 0;
+
+            let skippedCount = 0;
+
+
+            restoredDays.forEach(function(day) {
+
+                const request = store.get(day.date);
+
+                request.onsuccess = function() {
+
+                    if (request.result) {
+
+                        // הרשומה כבר קיימת ולכן לא נחליף אותה
+
+                        skippedCount++;
+
+                    } else {
+
+                        // הוספת רשומה חדשה למסד הנתונים
+
+                        store.add(day);
+
+                        restoredCount++;
+
+                    }
+
+                };
+
+            });
+
+
+            transaction.oncomplete = function() {
+
+                resolve({
+
+                    restored: restoredCount,
+
+                    skipped: skippedCount
+
+                });
+
+            };
+
+
+            transaction.onerror = function() {
+
+                reject(
+                    new Error("אירעה שגיאה בשמירת הרשומות.")
+                );
+
+            };
+
+            transaction.onabort = function() {
+
+                reject(
+                    new Error("השחזור בוטל. ייתכן שאין מספיק שטח אחסון.")
+                );
+
+            };
+
+        }).then(function(result) {
+
+            showStatus(
+
+                "השחזור הושלם! ✅ " +
+
+                result.restored + " רשומות נוספו. " +
+
+                result.skipped + " רשומות קיימות לא הוחלפו."
+
+            );
+
+        });
+
+
+        // טעינת היומן המעודכן
+
+        loadDays();
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        alert(
+
+            "לא ניתן לשחזר את היומן.\n\n" +
+
+            error.message +
+
+            "\n\nהרשומות הקיימות לא נמחקו."
+
+        );
+
+    }
+
+    finally {
+
+        restoreButton.disabled = false;
+
+        restoreButton.textContent =
+            "📂 שחזור יומן מקובץ גיבוי";
+
+    }
+
+};
+// ---------------------------------------------
+// הפעלת Service Worker לעבודה ללא אינטרנט
+// ---------------------------------------------
+
+if ("serviceWorker" in navigator) {
+
+    window.addEventListener("load", function() {
+
+        navigator.serviceWorker.register("./sw.js")
+
+            .then(function(registration) {
+
+                console.log(
+                    "Service Worker registered successfully:",
+                    registration.scope
+                );
+
+            })
+
+            .catch(function(error) {
+
+                console.error(
+                    "Service Worker registration failed:",
+                    error
+                );
+
+            });
+
+    });
+
+}
+    </script>
+
+</body>
+
+</html>
