@@ -275,7 +275,102 @@
 <p style="font-size: 13px; color: #738379;">
     אפשר לבחור כמה תמונות מאותו יום.
 </p>                
+<!-- אזור הקלטות קוליות -->
 
+<section id="voiceRecorder">
+
+    <h3>🎙️ הקלטות מהיום</h3>
+
+    <p style="color: #738379; line-height: 1.6;">
+        ספר על החוויות שלך בקול.
+        אפשר להקליט כמה פעמים במהלך היום.
+    </p>
+
+    <button
+        type="button"
+        id="startRecording"
+        class="add-button"
+    >
+        🎙️ התחל הקלטה
+    </button>
+
+    <button
+        type="button"
+        id="stopRecording"
+        class="cancel-button"
+        style="display: none;"
+    >
+        ⏹️ עצור הקלטה
+    </button>
+
+    <p id="recordingStatus" role="status"></p>
+
+    <div id="recordingsPreview"></div>
+    <!-- אזור התמלול בעברית -->
+
+<div id="transcriptionSection">
+
+    <h3>📝 תמלול קולי</h3>
+
+    <p style="color: #738379; line-height: 1.6;">
+        ספר בקול על החוויות שלך,
+        והן יהפכו לטקסט שתוכל לערוך.
+    </p>
+
+    <button
+        type="button"
+        id="startTranscription"
+        class="add-button"
+    >
+        🎙️ התחל תמלול
+    </button>
+
+    <button
+        type="button"
+        id="stopTranscription"
+        class="cancel-button"
+        style="display: none;"
+    >
+        ⏹️ עצור תמלול
+    </button>
+
+    <p id="transcriptionStatus" role="status"></p>
+
+    <textarea
+        id="transcriptionText"
+        placeholder="כאן יופיע התמלול שלך בעברית..."
+        rows="6"
+        style="width: 100%; box-sizing: border-box;"
+    ></textarea>
+
+</div>
+
+</section>
+<!-- אזור המקומות שבהם ביקרתי -->
+
+<section id="placesSection">
+
+    <h3>📍 המקומות שבהם ביקרתי</h3>
+
+    <p style="color: #738379; line-height: 1.6;">
+        הוסף את המקומות שבהם ביקרת היום.
+        בהמשך נוכל לזהות מקומות גם מתוך התמלול שלך.
+    </p>
+
+    <label for="dayPlaces">מקומות מהיום</label>
+
+    <textarea
+        id="dayPlaces"
+        rows="4"
+        placeholder="לדוגמה: בנגקוק, מפלי ארוואן, קנצ'נבורי"
+        style="width: 100%; box-sizing: border-box;"
+    ></textarea>
+
+    <p style="font-size: 13px; color: #738379;">
+        רשום כל מקום בשורה נפרדת.
+    </p>
+
+</section>
                 <button type="submit" class="add-button">
                     💾 שמור את היום
                 </button>
@@ -396,6 +491,13 @@
         document.getElementById("addDayButton").onclick = function() {
 
             dayForm.reset();
+            // ניקוי התמלול בעת יצירת יום חדש
+
+transcriptionText.value = "";
+// ניקוי רשימת המקומות בעת יצירת יום חדש
+document.getElementById("dayPlaces").value = "";
+
+transcriptionStatus.textContent = "";
 
             dateInput.value = getToday();
 
@@ -436,15 +538,18 @@
 
             }
 
-            const day = {
+          const day = {
+    date: dateInput.value,
+    title: titleInput.value.trim(),
+    story: storyInput.value.trim(),
+    transcription: transcriptionText.value.trim(),
 
-                date: dateInput.value,
-
-                title: titleInput.value.trim(),
-
-                story: storyInput.value.trim()
-
-            };
+    // שמירת המקומות כרשימה
+    places: document.getElementById("dayPlaces").value
+        .split("\n")
+        .map(place => place.trim())
+        .filter(place => place.length > 0)
+};
 
 
             if (!day.date || !day.title || !day.story) {
@@ -481,12 +586,24 @@ existingDayRequest.onsuccess = function() {
 
     // הוספת התמונות החדשות לתמונות הקיימות
 
-    day.photos = [...existingPhotos, ...newPhotos];
+    // שמירת התמונות הקיימות והחדשות
 
-    // שמירת הרשומה והתמונות במסד הנתונים
+day.photos = [...existingPhotos, ...newPhotos];
 
-    store.put(day);
 
+// שמירת ההקלטות הקיימות והחדשות
+
+const existingRecordings = existingDay?.recordings || [];
+
+day.recordings = [
+    ...existingRecordings,
+    ...pendingRecordings
+];
+
+
+// שמירת הרשומה, התמונות וההקלטות במסד הנתונים
+
+store.put(day);
 };
 
 existingDayRequest.onerror = function() {
@@ -495,15 +612,23 @@ existingDayRequest.onerror = function() {
 
 };
 
-            transaction.oncomplete = function() {
+          transaction.oncomplete = function() {
 
-                editor.style.display = "none";
+    // ניקוי ההקלטות הזמניות לאחר שמירה מוצלחת
+    pendingRecordings = [];
 
-                showStatus("היום נשמר בהצלחה! ✅");
+    // ניקוי הנגנים הזמניים מהטופס
+    recordingsPreview.replaceChildren();
 
-                loadDays();
+    // סגירת טופס העריכה
+    editor.style.display = "none";
 
-            };
+    showStatus("היום נשמר בהצלחה! ✅");
+
+    // טעינת הרשומות המעודכנות
+    loadDays();
+
+};
 
 
             transaction.onerror = function() {
@@ -625,6 +750,99 @@ existingDayRequest.onerror = function() {
                 card.appendChild(title);
 
                 card.appendChild(story);
+                // ---------------------------------------------
+// הצגת המקומות שבהם ביקרתי היום
+// ---------------------------------------------
+
+if (Array.isArray(day.places) && day.places.length > 0) {
+
+    const placesSection = document.createElement("div");
+
+    placesSection.style.cssText = `
+        background: #f0f5f1;
+        padding: 18px;
+        border-radius: 12px;
+        margin-top: 20px;
+        border-right: 4px solid #285943;
+    `;
+
+    const placesTitle = document.createElement("h3");
+
+    placesTitle.textContent = "📍 המקומות שבהם ביקרתי";
+
+    placesTitle.style.marginTop = "0";
+
+    placesSection.appendChild(placesTitle);
+
+    const placesList = document.createElement("ul");
+
+    placesList.style.cssText = `
+        padding-right: 25px;
+        line-height: 1.8;
+        margin-bottom: 0;
+    `;
+
+    day.places.forEach(function(place) {
+
+        const placeItem = document.createElement("li");
+
+        placeItem.textContent = place;
+
+        placesList.appendChild(placeItem);
+
+    });
+
+    placesSection.appendChild(placesList);
+
+    card.appendChild(placesSection);
+
+}
+                // ---------------------------------------------
+// הצגת התמלול השמור ברשומת היומן
+// ---------------------------------------------
+
+if (day.transcription && day.transcription.trim()) {
+
+    const transcriptionSection = document.createElement("div");
+
+    transcriptionSection.style.cssText = `
+        background: #f0f5f1;
+        padding: 18px;
+        border-radius: 12px;
+        margin-top: 20px;
+        border-right: 4px solid #285943;
+    `;
+
+    // כותרת אזור התמלול
+
+    const transcriptionTitle = document.createElement("h3");
+
+    transcriptionTitle.textContent = "📝 מה שסיפרתי היום";
+
+    transcriptionTitle.style.marginTop = "0";
+
+    // הצגת הטקסט שתומלל
+
+    const transcriptionContent = document.createElement("p");
+
+    transcriptionContent.textContent = day.transcription;
+
+    transcriptionContent.style.cssText = `
+        line-height: 1.8;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        margin-bottom: 0;
+    `;
+
+    // הוספת התמלול לרשומה
+
+    transcriptionSection.appendChild(transcriptionTitle);
+
+    transcriptionSection.appendChild(transcriptionContent);
+
+    card.appendChild(transcriptionSection);
+
+}
 // הצגת התמונות שנשמרו ברשומה
 
 if (day.photos && day.photos.length > 0) {
@@ -649,15 +867,441 @@ if (day.photos && day.photos.length > 0) {
         image.style.objectFit = "cover";
         image.style.borderRadius = "10px";
 
-        image.onload = function() {
-            URL.revokeObjectURL(imageUrl);
-        };
+        // שחרור הזיכרון לאחר טעינת התמונה הקטנה
 
-        photosGallery.appendChild(image);
+image.onload = function() {
+    URL.revokeObjectURL(imageUrl);
+};
 
+
+// פתיחת התמונה בגודל מלא בלחיצה
+
+image.style.cursor = "pointer";
+
+image.onclick = function() {
+
+    // כל התמונות של היום הנוכחי
+    const photos = day.photos;
+    let currentIndex = photos.indexOf(photo);
+
+    if (currentIndex < 0) return;
+
+    // יצירת חלון הגלריה
+    const overlay = document.createElement("div");
+
+    overlay.style.cssText = `
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.95);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        padding: 15px;
+    `;
+
+    // התמונה הגדולה
+    const fullImage = document.createElement("img");
+
+    fullImage.style.cssText = `
+        max-width: 100%;
+        max-height: 85vh;
+        object-fit: contain;
+        border-radius: 8px;
+    `;
+
+    // מונה התמונות
+    const counter = document.createElement("div");
+
+    counter.style.cssText = `
+        position: absolute;
+        bottom: 25px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: white;
+        font-size: 16px;
+        direction: ltr;
+    `;
+
+    // כפתור סגירה
+    const closeButton = document.createElement("button");
+
+    closeButton.textContent = "✕";
+    closeButton.setAttribute("aria-label", "סגירת גלריה");
+
+    closeButton.style.cssText = `
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(255,255,255,0.2);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        font-size: 24px;
+        cursor: pointer;
+    `;
+
+    // כפתורי מעבר בין תמונות
+    function createArrow(symbol, position) {
+
+        const button = document.createElement("button");
+
+        button.textContent = symbol;
+        button.setAttribute("aria-label", "מעבר בין תמונות");
+
+        button.style.cssText = `
+            position: absolute;
+            ${position}: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 28px;
+            cursor: pointer;
+        `;
+
+        return button;
+    }
+
+    const nextButton = createArrow("❯", "right");
+    const prevButton = createArrow("❮", "left");
+
+    let currentImageUrl = null;
+
+    // הצגת התמונה הנוכחית
+    function showPhoto() {
+
+        if (currentImageUrl) {
+            URL.revokeObjectURL(currentImageUrl);
+        }
+
+        currentImageUrl = URL.createObjectURL(
+            photos[currentIndex]
+        );
+
+        fullImage.src = currentImageUrl;
+
+        counter.textContent =
+            (currentIndex + 1) + " / " + photos.length;
+
+        const hasMultiplePhotos = photos.length > 1;
+
+        nextButton.style.display =
+            hasMultiplePhotos ? "block" : "none";
+
+        prevButton.style.display =
+            hasMultiplePhotos ? "block" : "none";
+    }
+
+    // מעבר לתמונה הבאה
+    function nextPhoto() {
+
+        currentIndex = (currentIndex + 1) % photos.length;
+
+        showPhoto();
+    }
+
+    // מעבר לתמונה הקודמת
+    function prevPhoto() {
+
+        currentIndex =
+            (currentIndex - 1 + photos.length) % photos.length;
+
+        showPhoto();
+    }
+
+    nextButton.onclick = nextPhoto;
+    prevButton.onclick = prevPhoto;
+
+    // סגירת הגלריה
+    function closeGallery() {
+
+        overlay.remove();
+
+        if (currentImageUrl) {
+            URL.revokeObjectURL(currentImageUrl);
+        }
+
+        document.removeEventListener("keydown", handleKeyboard);
+    }
+
+    closeButton.onclick = closeGallery;
+
+    overlay.onclick = function(event) {
+
+        if (event.target === overlay) {
+            closeGallery();
+        }
+    };
+
+    // מקשי המקלדת
+    function handleKeyboard(event) {
+
+        if (event.key === "Escape") {
+            closeGallery();
+        }
+
+        if (event.key === "ArrowRight") {
+            nextPhoto();
+        }
+
+        if (event.key === "ArrowLeft") {
+            prevPhoto();
+        }
+    }
+
+    document.addEventListener("keydown", handleKeyboard);
+
+    // מעבר בין תמונות באמצעות החלקה בטלפון
+    let touchStartX = 0;
+
+    overlay.addEventListener("touchstart", function(event) {
+
+        touchStartX = event.changedTouches[0].screenX;
+
+    }, { passive: true });
+
+    overlay.addEventListener("touchend", function(event) {
+
+        const touchEndX = event.changedTouches[0].screenX;
+
+        const difference = touchEndX - touchStartX;
+
+        if (Math.abs(difference) > 50) {
+
+            if (difference < 0) {
+                nextPhoto();
+            } else {
+                prevPhoto();
+            }
+        }
+
+    }, { passive: true });
+
+    // הוספת כל הרכיבים למסך
+    overlay.appendChild(fullImage);
+    overlay.appendChild(counter);
+    overlay.appendChild(closeButton);
+    overlay.appendChild(nextButton);
+    overlay.appendChild(prevButton);
+
+    document.body.appendChild(overlay);
+
+    showPhoto();
+
+};
+
+// יצירת מסגרת לתמונה ולכפתור המחיקה
+
+const photoWrapper = document.createElement("div");
+
+photoWrapper.style.cssText = `
+    position: relative;
+    width: 110px;
+    height: 110px;
+    flex-shrink: 0;
+`;
+
+
+// יצירת כפתור מחיקה
+
+const deleteButton = document.createElement("button");
+
+deleteButton.textContent = "✕";
+
+deleteButton.setAttribute(
+    "aria-label",
+    "מחיקת תמונה"
+);
+
+deleteButton.title = "מחיקת תמונה";
+
+deleteButton.style.cssText = `
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(180, 40, 40, 0.9);
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 2;
+`;
+
+
+// פעולת המחיקה
+
+deleteButton.onclick = function(event) {
+
+    event.stopPropagation();
+
+    const approved = confirm(
+        "האם אתה בטוח שברצונך למחוק את התמונה מהיומן?"
+    );
+
+    if (!approved) {
+        return;
+    }
+
+    // זיהוי התמונה שנבחרה למחיקה
+
+    const photoIndex = day.photos.indexOf(photo);
+
+    if (photoIndex === -1) {
+        showStatus("לא ניתן לזהות את התמונה.");
+        return;
+    }
+
+    // פתיחת מסד הנתונים
+
+    const transaction = db.transaction(
+        ["days"],
+        "readwrite"
+    );
+
+    const store = transaction.objectStore("days");
+
+    const request = store.get(day.date);
+
+
+    request.onsuccess = function() {
+
+        const savedDay = request.result;
+
+        if (
+            !savedDay ||
+            !Array.isArray(savedDay.photos) ||
+            photoIndex >= savedDay.photos.length
+        ) {
+
+            showStatus(
+                "לא ניתן למצוא את התמונה ברשומה השמורה."
+            );
+
+            return;
+        }
+
+        // הסרת התמונה שנבחרה בלבד
+
+        savedDay.photos.splice(photoIndex, 1);
+
+        // שמירת הרשומה המעודכנת
+
+        store.put(savedDay);
+
+    };
+
+
+    // לאחר השלמת השמירה, נעדכן את התצוגה
+
+    transaction.oncomplete = function() {
+
+        showStatus("התמונה נמחקה מהיומן. ✅");
+
+        loadDays();
+
+    };
+
+
+    transaction.onabort = function() {
+
+        showStatus(
+            "אירעה שגיאה במחיקת התמונה. נסה שוב."
+        );
+
+    };
+
+};
+
+
+// הוספת התמונה וכפתור המחיקה למסגרת
+
+photoWrapper.appendChild(image);
+
+photoWrapper.appendChild(deleteButton);
+
+
+// הוספת המסגרת לגלריה
+
+photosGallery.appendChild(photoWrapper);
     });
 
     card.appendChild(photosGallery);
+
+}
+// ---------------------------------------------
+// הצגת ההקלטות השמורות ברשומת היומן
+// ---------------------------------------------
+
+if (day.recordings && day.recordings.length > 0) {
+
+    const recordingsSection = document.createElement("div");
+
+    recordingsSection.style.cssText = `
+        margin-top: 25px;
+        padding-top: 15px;
+        border-top: 1px solid #e4eee7;
+    `;
+
+    const recordingsTitle = document.createElement("h3");
+
+    recordingsTitle.textContent = "🎧 ההקלטות שלי מהיום";
+
+    recordingsSection.appendChild(recordingsTitle);
+
+
+    day.recordings.forEach(function(recording, index) {
+
+        const recordingContainer = document.createElement("div");
+
+        recordingContainer.style.cssText = `
+            background: #f5f7f4;
+            padding: 12px;
+            border-radius: 12px;
+            margin-top: 12px;
+        `;
+
+        const recordingLabel = document.createElement("p");
+
+        recordingLabel.textContent = "הקלטה מספר " + (index + 1);
+
+
+        const audioPlayer = document.createElement("audio");
+
+        audioPlayer.controls = true;
+
+        audioPlayer.style.width = "100%";
+
+        const recordingUrl = URL.createObjectURL(recording);
+
+        audioPlayer.src = recordingUrl;
+
+        // שחרור כתובת ההקלטה כשהדפדפן מסיים להשתמש בנגן
+        window.addEventListener("pagehide", function() {
+            URL.revokeObjectURL(recordingUrl);
+        }, { once: true });
+
+
+        recordingContainer.appendChild(recordingLabel);
+
+        recordingContainer.appendChild(audioPlayer);
+
+        recordingsSection.appendChild(recordingContainer);
+
+    });
+
+
+    card.appendChild(recordingsSection);
 
 }
                 card.appendChild(editButton);
@@ -683,6 +1327,15 @@ if (day.photos && day.photos.length > 0) {
             titleInput.value = day.title;
 
             storyInput.value = day.story;
+            // טעינת התמלול הקיים של היום
+
+transcriptionText.value = day.transcription || "";
+// טעינת המקומות השמורים של היום
+
+document.getElementById("dayPlaces").value =
+    Array.isArray(day.places)
+        ? day.places.join("\n")
+        : "";
 
             // התאריך הוא המזהה של הרשומה.
             // בעריכה ננעל אותו כדי למנוע יצירת רשומה כפולה.
@@ -869,17 +1522,46 @@ document.getElementById("backupButton").onclick = async function() {
 
             }
 
-            backupDays.push({
+            // הכנת ההקלטות לקובץ הגיבוי
 
-                date: day.date,
+const backupRecordings = [];
 
-                title: day.title,
+for (const recording of (day.recordings || [])) {
 
-                story: day.story,
+    const recordingData = await photoToDataURL(recording);
 
-                photos: backupPhotos
+    backupRecordings.push({
 
-            });
+        type: recording.type || "audio/webm",
+
+        data: recordingData
+
+    });
+
+}
+
+
+// הוספת הרשומה לקובץ הגיבוי
+
+backupDays.push({
+
+    date: day.date,
+
+    title: day.title,
+
+    story: day.story,
+
+    transcription: day.transcription || "",
+
+    // שמירת המקומות שבהם ביקרת
+    places: Array.isArray(day.places) ? day.places : [],
+
+    photos: backupPhotos,
+
+    recordings: backupRecordings
+
+});
+            
 
         }
 
@@ -1122,28 +1804,123 @@ restoreFileInput.onchange = async function() {
 
             datesInBackup.add(day.date);
 
-            const restoredPhotos = [];
+            // ---------------------------------------------
+// שחזור התמונות של היום
+// ---------------------------------------------
 
-            for (const photo of day.photos) {
+const restoredPhotos = [];
 
-                const imageFile = await restorePhoto(photo);
+for (const photo of day.photos) {
 
-                restoredPhotos.push(imageFile);
+    const imageFile = await restorePhoto(photo);
 
-            }
+    restoredPhotos.push(imageFile);
 
-            restoredDays.push({
+}
 
-                date: day.date,
 
-                title: day.title,
+// ---------------------------------------------
+// שחזור ההקלטות של היום
+// ---------------------------------------------
 
-                story: day.story,
+const restoredRecordings = [];
 
-                photos: restoredPhotos
+// בדיקה שמבנה ההקלטות בקובץ תקין
 
-            });
+if (
+    day.recordings !== undefined &&
+    !Array.isArray(day.recordings)
+) {
 
+    throw new Error(
+        "מבנה ההקלטות בקובץ הגיבוי אינו תקין."
+    );
+
+}
+
+
+// מעבר על כל ההקלטות שנשמרו בגיבוי
+
+for (const recording of (day.recordings || [])) {
+
+    // בדיקה שקובץ הגיבוי מכיל נתוני קול
+
+    if (
+        !recording ||
+        typeof recording.data !== "string" ||
+        !/^data:audio\/[^,]+;base64,/i.test(recording.data)
+    ) {
+
+        throw new Error(
+            "אחת ההקלטות בקובץ הגיבוי אינה תקינה."
+        );
+
+    }
+
+
+    // המרת המידע שבגיבוי בחזרה לקובץ קול
+
+    const response = await fetch(recording.data);
+
+    if (!response.ok) {
+
+        throw new Error(
+            "לא ניתן לשחזר אחת מההקלטות."
+        );
+
+    }
+
+    const audioBlob = await response.blob();
+
+
+    // בדיקה שהקובץ ששוחזר הוא קובץ קול
+
+    if (
+        !audioBlob.type.startsWith("audio/") ||
+        audioBlob.size === 0
+    ) {
+
+        throw new Error(
+            "קובץ הקול ששוחזר אינו תקין."
+        );
+
+    }
+
+
+    // הוספת ההקלטה לרשימה
+
+    restoredRecordings.push(audioBlob);
+
+}
+
+
+// ---------------------------------------------
+// הוספת הרשומה המשוחזרת ליומן
+// ---------------------------------------------
+
+restoredDays.push({
+
+    date: day.date,
+
+    title: day.title,
+
+    story: day.story,
+
+    transcription:
+        typeof day.transcription === "string"
+            ? day.transcription
+            : "",
+
+    // שחזור רשימת המקומות
+    places: Array.isArray(day.places)
+        ? day.places.filter(place => typeof place === "string")
+        : [],
+
+    photos: restoredPhotos,
+
+    recordings: restoredRecordings
+
+});
         }
 
 
@@ -1285,8 +2062,11 @@ restoreFileInput.onchange = async function() {
 // הפעלת Service Worker לעבודה ללא אינטרנט
 // ---------------------------------------------
 
-if ("serviceWorker" in navigator) {
-
+if (
+    "serviceWorker" in navigator &&
+    location.hostname !== "127.0.0.1" &&
+    location.hostname !== "localhost"
+) {
     window.addEventListener("load", function() {
 
         navigator.serviceWorker.register("./sw.js")
@@ -1310,6 +2090,340 @@ if ("serviceWorker" in navigator) {
             });
 
     });
+
+}
+// ---------------------------------------------
+// הקלטות קוליות ביומן המסע
+// ---------------------------------------------
+
+const startRecordingButton = document.getElementById("startRecording");
+const stopRecordingButton = document.getElementById("stopRecording");
+const recordingStatus = document.getElementById("recordingStatus");
+const recordingsPreview = document.getElementById("recordingsPreview");
+
+let mediaRecorder = null;
+let microphoneStream = null;
+let recordedChunks = [];
+let pendingRecordings = [];
+let currentRecordingUrl = null;
+
+
+// התחלת הקלטה
+
+startRecordingButton.onclick = async function() {
+
+    if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia ||
+        !window.MediaRecorder
+    ) {
+        recordingStatus.textContent =
+            "הדפדפן אינו תומך בהקלטת קול או שאין הרשאה להשתמש במיקרופון.";
+        return;
+    }
+
+    startRecordingButton.disabled = true;
+
+    try {
+
+        // בקשת הרשאה להשתמש במיקרופון
+
+        microphoneStream = await navigator.mediaDevices.getUserMedia({
+            audio: true
+        });
+
+        // בחירת פורמט הקלטה שהדפדפן תומך בו
+
+        mediaRecorder = new MediaRecorder(microphoneStream);
+
+        recordedChunks = [];
+
+        // איסוף חלקי ההקלטה
+
+        mediaRecorder.ondataavailable = function(event) {
+
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+
+        };
+
+        // טיפול בסיום ההקלטה
+
+        mediaRecorder.onstop = function() {
+
+            const recordingBlob = new Blob(
+    recordedChunks,
+    { type: mediaRecorder.mimeType || "audio/webm" }
+);
+
+// הוספת ההקלטה לרשימת ההקלטות של היום
+pendingRecordings.push(recordingBlob);
+
+            // שחרור המיקרופון
+
+            microphoneStream.getTracks().forEach(function(track) {
+                track.stop();
+            });
+
+            microphoneStream = null;
+
+            // ניקוי נגן ההקלטה הקודמת
+
+            // יצירת נגן חדש עבור ההקלטה
+
+const recordingNumber = pendingRecordings.length;
+
+const recordingContainer = document.createElement("div");
+
+recordingContainer.style.cssText = `
+    background: #f5f7f4;
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 15px;
+`;
+
+// כותרת ההקלטה
+
+const recordingTitle = document.createElement("p");
+
+recordingTitle.textContent = "🎧 הקלטה מספר " + recordingNumber;
+
+recordingTitle.style.cssText = `
+    font-weight: bold;
+    margin: 0 0 10px;
+`;
+
+// יצירת נגן ההקלטה
+
+const audioPlayer = document.createElement("audio");
+
+audioPlayer.controls = true;
+
+audioPlayer.src = URL.createObjectURL(recordingBlob);
+
+audioPlayer.style.width = "100%";
+
+// הוספת הנגן לרשימת ההקלטות
+
+recordingContainer.appendChild(recordingTitle);
+
+recordingContainer.appendChild(audioPlayer);
+
+recordingsPreview.appendChild(recordingContainer);
+            recordingStatus.textContent =
+                "ההקלטה הסתיימה! אפשר להאזין לה כאן. 🎧";
+
+            startRecordingButton.disabled = false;
+            startRecordingButton.style.display = "block";
+            stopRecordingButton.style.display = "none";
+
+        };
+        stopRecordingButton.disabled = false;
+        mediaRecorder.start();
+
+        recordingStatus.textContent = "🔴 מקליט עכשיו...";
+
+        startRecordingButton.style.display = "none";
+        stopRecordingButton.style.display = "block";
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        recordingStatus.textContent =
+            "לא ניתן להפעיל את המיקרופון. בדוק שהדפדפן קיבל הרשאה.";
+
+        if (microphoneStream) {
+            microphoneStream.getTracks().forEach(function(track) {
+                track.stop();
+            });
+
+            microphoneStream = null;
+        }
+
+        startRecordingButton.disabled = false;
+        startRecordingButton.style.display = "block";
+        stopRecordingButton.style.display = "none";
+
+    }
+
+};
+
+
+// עצירת ההקלטה
+
+stopRecordingButton.onclick = function() {
+
+    if (mediaRecorder && mediaRecorder.state === "recording") {
+
+        mediaRecorder.stop();
+
+        stopRecordingButton.disabled = true;
+
+        recordingStatus.textContent = "⏳ מכין את ההקלטה...";
+
+    }
+
+};
+// ---------------------------------------------
+// תמלול קולי בעברית
+// ---------------------------------------------
+
+const startTranscriptionButton =
+    document.getElementById("startTranscription");
+
+const stopTranscriptionButton =
+    document.getElementById("stopTranscription");
+
+const transcriptionStatus =
+    document.getElementById("transcriptionStatus");
+
+const transcriptionText =
+    document.getElementById("transcriptionText");
+
+const SpeechRecognitionAPI =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+let speechRecognition = null;
+
+
+// בדיקה שהדפדפן תומך בתמלול
+
+if (!SpeechRecognitionAPI) {
+
+    startTranscriptionButton.disabled = true;
+
+    transcriptionStatus.textContent =
+        "הדפדפן אינו תומך בתמלול קולי.";
+
+} else {
+
+    // יצירת מנגנון התמלול
+
+    speechRecognition = new SpeechRecognitionAPI();
+
+    speechRecognition.lang = "he-IL";
+
+    speechRecognition.continuous = false;
+
+    speechRecognition.interimResults = false;
+
+
+    // התחלת תמלול
+
+    startTranscriptionButton.onclick = function() {
+
+        try {
+
+            speechRecognition.start();
+
+        } catch (error) {
+
+            console.error(error);
+
+            transcriptionStatus.textContent =
+                "לא ניתן להתחיל תמלול. נסה שוב.";
+
+        }
+
+    };
+
+
+    // המיקרופון התחיל להאזין
+
+    speechRecognition.onstart = function() {
+
+        transcriptionStatus.textContent =
+            "🔴 מקשיב לך... דבר בעברית.";
+
+        startTranscriptionButton.style.display = "none";
+
+        stopTranscriptionButton.style.display = "block";
+
+    };
+
+
+    // קבלת התמלול
+
+    speechRecognition.onresult = function(event) {
+
+        const transcript =
+            event.results[0][0].transcript;
+
+        // הוספת הטקסט החדש בלי למחוק את הקודם
+
+        const existingText = transcriptionText.value.trim();
+
+        transcriptionText.value =
+            existingText
+                ? existingText + "\n" + transcript
+                : transcript;
+
+        transcriptionStatus.textContent =
+            "✅ התמלול התקבל! אפשר לערוך אותו או להמשיך לדבר.";
+
+    };
+
+
+    // עצירה ידנית
+
+    stopTranscriptionButton.onclick = function() {
+
+        speechRecognition.stop();
+
+        transcriptionStatus.textContent =
+            "⏳ מסיים את התמלול...";
+
+    };
+
+
+    // טיפול בשגיאות
+
+    speechRecognition.onerror = function(event) {
+
+        console.error("שגיאת תמלול:", event.error);
+
+        if (event.error === "no-speech") {
+
+            transcriptionStatus.textContent =
+                "לא זוהה דיבור. נסה שוב.";
+
+        } else if (event.error === "not-allowed") {
+
+            transcriptionStatus.textContent =
+                "יש לאפשר גישה למיקרופון כדי לתמלל.";
+
+        } else {
+
+            transcriptionStatus.textContent =
+                "אירעה שגיאה בתמלול. נסה שוב.";
+
+        }
+
+    };
+
+
+    // סיום התמלול
+
+    speechRecognition.onend = function() {
+
+        startTranscriptionButton.style.display = "block";
+
+        stopTranscriptionButton.style.display = "none";
+
+        // שמירה על הטקסט שכבר התקבל
+
+        if (!transcriptionText.value.trim()) {
+
+            transcriptionStatus.textContent =
+                "התמלול הסתיים. אפשר להתחיל שוב.";
+
+        }
+
+    };
 
 }
     </script>

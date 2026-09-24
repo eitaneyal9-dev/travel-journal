@@ -4,8 +4,7 @@
 // ---------------------------------------------
 
 // שם המטמון וגרסתו
-const CACHE_NAME = "travel-journal-v1";
-
+const CACHE_NAME = "travel-journal-v3";
 // קובצי האפליקציה שנרצה לשמור במכשיר
 const APP_FILES = [
     "./",
